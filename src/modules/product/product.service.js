@@ -1,7 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma            = new PrismaClient();
-
-// Static enums for frontend filters
 const SIZES        = ['S','M','L','XL'];
 const AVAILABILITY = ['IN_STOCK','OUT_OF_STOCK'];
 
