@@ -2,11 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.getFilters = async () => {
-  // 1) enums
+  
   const sizes        = ['XS','S','M','L','XL','XXL'];
   const availability = ['IN_STOCK','OUT_OF_STOCK'];
 
-  // 2) fetch categories
+
   const categories = await prisma.category.findMany({
     select: { id: true, name: true }
   });
