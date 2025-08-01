@@ -1,16 +1,13 @@
-const router    = require('express').Router();
-const ctrl      = require('./stripe.controller');
-const auth      = require('../../middlewares/auth');
+const router = require('express').Router();
+const ctrl   = require('./stripe.controller');
+const auth   = require('../../middlewares/auth');
+
+// POST /payments/stripe/create-payment-intent
 
 router.post(
   '/create-payment-intent',
-  auth(),                    // sets req.user
+  auth(),   
   ctrl.createPaymentIntent
-);
-
-router.post(
-  '/webhook',
-  ctrl.webhookHandler
 );
 
 module.exports = router;

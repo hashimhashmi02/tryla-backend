@@ -1,56 +1,28 @@
-const service = require('./product.service');
-
-exports.filters = async (_req, res, next) => {
+const service = require('./stripe.service');
+// POST /payments/stripe/create-payment-intent
+exports.createPaymentIntent = async (req, res, next) => {
   try {
-    const data = await service.getFilters();
-    res.json(data);
+    const { orderId } = req.body;
+    if (!orderId) throw Object.assign(new Error('orderId is required'), { status: 400 });
+    const intent = await service.createPaymentIntent(orderId);
+    res.json({ clientSecret: intent.client_secret });
   } catch (err) {
     next(err);
   }
 };
 
-exports.list = async (req, res, next) => {
+// POST /payments/stripe/webhook  <-- will be called with raw body
+exports.webhookHandler = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
   try {
-    const items = await service.list(req.query);
-    res.json(items);
-  } catch (err) {
-    next(err);
-  }
-};
+    const event = require('stripe')(process.env.STRIPE_SECRET_KEY)
+      .webhooks
+      .constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
 
-exports.getOne = async (req, res, next) => {
-  try {
-    const item = await service.getOne(req.params.id);
-    if (!item) return res.status(404).json({ msg: 'Not found' });
-    res.json(item);
+    await service.handleWebhookEvent(event);
+    res.json({ received: true });
   } catch (err) {
-    next(err);
-  }
-};
-
-exports.create = async (req, res, next) => {
-  try {
-    const item = await service.create(req.body);
-    res.json(item);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.update = async (req, res, next) => {
-  try {
-    const item = await service.update(req.params.id, req.body);
-    res.json(item);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.remove = async (req, res, next) => {
-  try {
-    await service.remove(req.params.id);
-    res.json({ ok: true });
-  } catch (err) {
-    next(err);
+    console.error('⚠️  Webhook error:', err.message);
+    res.status(err.status || 400).send(`Webhook Error: ${err.message}`);
   }
 };

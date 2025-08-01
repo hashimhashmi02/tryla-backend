@@ -1,5 +1,5 @@
-const router     = require('express').Router();
-const ctrl       = require('./stripe.controller');
+const router = require('express').Router();
+const ctrl   = require('./stripe.controller');
 
 router.post('/', ctrl.webhookHandler);
 

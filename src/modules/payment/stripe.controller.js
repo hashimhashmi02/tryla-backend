@@ -3,14 +3,14 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const service = require('./stripe.service');
 
 exports.createPaymentIntent = async (req, res, next) => {
-    try {
-        const { orderId } = req.body;
-        if (!orderId) throw new Error('orderId is required');
-        const intent = await service.createPaymentIntent(orderId);
-        res.json({ clientSecret: intent.client_secret });
-    } catch (err) {
-        next(err);
-    }
+  try {
+    const { orderId } = req.body;
+    if (!orderId) throw new Error('orderId is required');
+    const intent = await service.createPaymentIntent(orderId);
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    next(err);
+  }
 };
 
 exports.webhookHandler = async (req, res) => {
