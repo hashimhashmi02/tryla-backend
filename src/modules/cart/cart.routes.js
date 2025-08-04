@@ -5,8 +5,8 @@ const auth       = require('../../middlewares/auth');
 router.use(auth());  
 
 router.get('/',      ctrl.getCart);               // GET    /cart
-router.post('/',     ctrl.addItem);               // POST   /cart      { productId, quantity }
-router.patch('/:id', ctrl.updateItem);            // PATCH  /cart/:id  { quantity }
+router.post('/',     ctrl.addItem);               // POST   /cart    
+router.patch('/:id', ctrl.updateItem);            // PATCH  /cart/:id  
 router.delete('/:id',ctrl.removeItem);            // DELETE /cart/:id
 
 module.exports = router;
