@@ -9,21 +9,7 @@ const STATUS_TRANSITIONS = {
   DELIVERED: []
 };
 
-const { send } = require('../../utils/email');
-exports.create = async (data) => {
-  const o = await prisma.order.create({ data: { /*…*/ } });
-  // send confirmation
-  await send(
-    o.user.email,
-    'Your order is received!',
-    `<p>Thanks for ordering. Your order #${o.id} is now PENDING.</p>`
-  );
-  return o;
-};
-
-
 exports.createOrder = async (userId) => {
-
   const cartItems = await prisma.cartItem.findMany({
     where: { userId },
     include: { product: true }
@@ -60,14 +46,15 @@ exports.createOrder = async (userId) => {
     return o;
   });
 
+ 
   const user = await prisma.user.findUnique({ where: { id: userId }});
   if (user && user.email) {
     await send(
       user.email,
       `Order #${order.id} received`,
-      `<p>Thanks for your order, ${user.name || ''}!<br>
-       Your order <strong>#${order.id}</strong> is now <em>PENDING</em>.<br>
-       Total: $${order.total.toFixed(2)}</p>`
+      `<p>Hi ${user.name || ''},<br>
+         Thanks for your order! Your order <strong>#${order.id}</strong> is now <em>PENDING</em>.<br>
+         Total: $${order.total.toFixed(2)}</p>`
     );
   }
 
@@ -80,12 +67,13 @@ exports.listOrders = async (user) => {
   return prisma.order.findMany({
     where,
     include: {
-      items:   { include: { product: true } },
-      user:    true
+      items: { include: { product: true } },
+      user:  true
     },
     orderBy: { createdAt: 'desc' }
   });
 };
+
 
 exports.getOrder = async (user, orderId) => {
   const whereClause = user.role === 'ADMIN'
@@ -94,8 +82,8 @@ exports.getOrder = async (user, orderId) => {
   const o = await prisma.order.findUnique({
     where: whereClause,
     include: {
-      items:   { include: { product: true } },
-      user:    true
+      items: { include: { product: true } },
+      user:  true
     }
   });
   return o;
@@ -103,14 +91,12 @@ exports.getOrder = async (user, orderId) => {
 
 
 exports.changeStatus = async (orderId, newStatus) => {
-
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) {
     const err = new Error('Order not found');
     err.status = 404;
     throw err;
   }
-
 
   const allowedNext = STATUS_TRANSITIONS[order.status] || [];
   if (!allowedNext.includes(newStatus)) {
@@ -119,10 +105,8 @@ exports.changeStatus = async (orderId, newStatus) => {
     throw err;
   }
 
-  const updated = await prisma.order.update({
+  return prisma.order.update({
     where: { id: orderId },
     data:  { status: newStatus }
   });
-
-  return updated;
 };
