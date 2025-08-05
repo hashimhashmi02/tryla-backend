@@ -5,7 +5,7 @@ const service = require('./stripe.service');
 exports.createPaymentIntent = async (req, res, next) => {
   try {
     const { orderId } = req.body;
-    if (!orderId) throw new Error('orderId is required');
+    if (!orderId) throw Object.assign(new Error('orderId is required'), { status: 400 });
     const intent = await service.createPaymentIntent(orderId);
     res.json({ clientSecret: intent.client_secret });
   } catch (err) {
@@ -14,24 +14,17 @@ exports.createPaymentIntent = async (req, res, next) => {
 };
 
 exports.webhookHandler = async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    let event;
-    try {
-        event = stripe.webhooks.constructEvent(
-            req.body,
-            sig,
-            process.env.STRIPE_WEBHOOK_SECRET
-        );
-    } catch (err) {
-        console.error(' Webhook signature verification failed.', err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    try {
-        await service.handleWebhookEvent(event);
-        res.json({ received: true });
-    } catch (err) {
-        console.error('Webhook processing error', err);
-        res.status(500).send();
-    }
+  const sig = req.headers['stripe-signature'];
+  try {
+    const event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+    await service.handleWebhookEvent(event);
+    res.json({ received: true });
+  } catch (err) {
+    console.error('⚠️ Webhook error:', err.message);
+    res.status(err.status || 400).send(`Webhook Error: ${err.message}`);
+  }
 };

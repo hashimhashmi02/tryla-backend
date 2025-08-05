@@ -6,4 +6,4 @@ exports.create = async({name})=>{
     return prisma.category.create({data:{name}});
 };
 
-exports.list = async()=> prisma.category.findMany();
+exports.list = async()=> prisma.category.findMany(); 
