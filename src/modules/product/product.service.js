@@ -1,11 +1,10 @@
+// src/modules/product/product.service.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.getFilters = async () => {
-  
   const sizes        = ['XS','S','M','L','XL','XXL'];
   const availability = ['IN_STOCK','OUT_OF_STOCK'];
-
 
   const categories = await prisma.category.findMany({
     select: { id: true, name: true }
@@ -59,8 +58,11 @@ exports.create = async (data) => {
     careInstructions, fit, length
   } = data;
 
+  // If you're not using Zod earlier, keep this check:
   if (!title || price == null || !categoryId) {
-    throw new Error('Missing required fields: title, price, categoryId');
+    const err = new Error('Missing required fields: title, price, categoryId');
+    err.status = 400;
+    throw err;
   }
 
   return prisma.product.create({
@@ -95,5 +97,21 @@ exports.update = async (id, data) => {
 exports.remove = async (id) => {
   return prisma.product.delete({
     where: { id }
+  });
+};
+
+/**
+ * @param {string} q
+ * @returns {Promise<Product[]>}
+ */
+exports.search = async (q) => {
+  return prisma.product.findMany({
+    where: {
+      OR: [
+        { title:       { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } }
+      ]
+    },
+    orderBy: { createdAt: 'desc' }
   });
 };
