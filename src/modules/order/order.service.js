@@ -9,6 +9,18 @@ const STATUS_TRANSITIONS = {
   DELIVERED: []
 };
 
+const { send } = require('../../utils/email');
+exports.create = async (data) => {
+  const o = await prisma.order.create({ data: { /*…*/ } });
+  // send confirmation
+  await send(
+    o.user.email,
+    'Your order is received!',
+    `<p>Thanks for ordering. Your order #${o.id} is now PENDING.</p>`
+  );
+  return o;
+};
+
 
 exports.createOrder = async (userId) => {
 
