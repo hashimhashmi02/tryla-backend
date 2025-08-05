@@ -22,9 +22,13 @@ exports.getOrder = async (req,res,next) => {
   } catch(e){ next(e); }
 };
 
-exports.updateStatus = async (req,res,next) => {
+exports.updateStatus = async (req, res, next) => {
   try {
-    const updated = await service.updateStatus(req.params.id, req.body.status);
-    res.json(updated);
-  } catch(e){ next(e); }
+    const { id }    = req.params;
+    const { status } = req.body;
+    const updated   = await require('./order.service').changeStatus(id, status);
+    res.json({ ok: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
 };
