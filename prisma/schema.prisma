@@ -84,16 +84,19 @@ model CartItem {
 }
 
 model Order {
-  id         String       @id @default(cuid())
-  userId     String
-  user       User         @relation(fields: [userId], references: [id])
-  status     OrderStatus  @default(PENDING)
-  total      Decimal      @db.Decimal(10,2)
-   paymentIntentId String?      // <— add this
-  items      OrderItem[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id])
+  status           OrderStatus  @default(PENDING)
+  total            Decimal      @db.Decimal(10,2)
+  shippingAddress  String       @default("")
+  recipientName    String       @default("")
+  recipientPhone   String       @default("")
+  items            OrderItem[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
+
 
 model OrderItem {
   id         String   @id @default(cuid())

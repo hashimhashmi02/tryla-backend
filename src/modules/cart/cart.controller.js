@@ -1,30 +1,39 @@
 const service = require('./cart.service');
 
-exports.getCart = async (req,res,next) => {
+exports.list = async (req, res, next) => {
   try {
-    const items = await service.getCart(req.user.id);
-    res.json(items);
-  } catch(e){ next(e); }
+    const cart = await service.getCart(req.user.id);
+    res.json({ ok: true, data: cart });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.addItem = async (req,res,next) => {
+exports.create = async (req, res, next) => {
   try {
     const { productId, quantity } = req.body;
-    const item = await service.addItem(req.user.id, productId, quantity);
-    res.json(item);
-  } catch(e){ next(e); }
+    const item = await service.create(req.user.id, productId, quantity);
+    res.status(201).json({ ok: true, data: item });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.updateItem = async (req,res,next) => {
+exports.update = async (req, res, next) => {
   try {
-    const item = await service.updateItem(req.user.id, req.params.id, req.body.quantity);
-    res.json(item);
-  } catch(e){ next(e); }
+    const { quantity } = req.body;
+    const item = await service.update(req.params.id, quantity);
+    res.json({ ok: true, data: item });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.removeItem = async (req,res,next) => {
+exports.remove = async (req, res, next) => {
   try {
-    await service.removeItem(req.user.id, req.params.id);
-    res.json({ ok: true });
-  } catch(e){ next(e); }
+    await service.remove(req.params.id);
+    res.json({ ok: true, data: null });
+  } catch (err) {
+    next(err);
+  }
 };

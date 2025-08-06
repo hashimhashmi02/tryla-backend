@@ -1,12 +1,20 @@
-const router     = require('express').Router();
-const ctrl       = require('./cart.controller');
-const auth       = require('../../middlewares/auth');
+const router = require('express').Router();
+const ctrl   = require('./cart.controller');
+const auth   = require('../../middlewares/auth');
 
-router.use(auth());  
 
-router.get('/',      ctrl.getCart);               // GET    /cart
-router.post('/',     ctrl.addItem);               // POST   /cart    
-router.patch('/:id', ctrl.updateItem);            // PATCH  /cart/:id  
-router.delete('/:id',ctrl.removeItem);            // DELETE /cart/:id
+router.use(auth());
+
+
+router.get('/', ctrl.list);
+
+
+router.post('/', ctrl.create);
+
+
+router.patch('/:id', ctrl.update);
+
+
+router.delete('/:id', ctrl.remove);
 
 module.exports = router;
