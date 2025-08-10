@@ -1,19 +1,16 @@
-// src/modules/order/order.controller.js
 const service = require('./order.service')
 
-// POST /orders/checkout
+
 exports.checkout = async (req, res, next) => {
   try {
     const { shippingAddress, recipientName, recipientPhone } = req.body
 
-    // basic validation
     if (!shippingAddress || !recipientName || !recipientPhone) {
       const err = new Error('shippingAddress, recipientName & recipientPhone are required')
       err.status = 400
       throw err
     }
 
-    // pass userId and checkout info to service
     const order = await service.createOrder(
       req.user.id,
       shippingAddress,
@@ -27,7 +24,7 @@ exports.checkout = async (req, res, next) => {
   }
 }
 
-// GET /orders
+
 exports.list = async (req, res, next) => {
   try {
     const orders = await service.listOrders(req.user)
@@ -37,7 +34,7 @@ exports.list = async (req, res, next) => {
   }
 }
 
-// GET /orders/:id
+
 exports.getOne = async (req, res, next) => {
   try {
     const order = await service.getOrder(req.user, req.params.id)
@@ -51,7 +48,7 @@ exports.getOne = async (req, res, next) => {
   }
 }
 
-// PATCH /orders/:id/status
+
 exports.updateStatus = async (req, res, next) => {
   try {
     const { status } = req.body

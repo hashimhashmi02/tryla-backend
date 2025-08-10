@@ -11,6 +11,7 @@ const orderRoutes         = require('./modules/order/order.routes');
 const stripePaymentRoutes = require('./modules/payment/stripe.routes');
 const stripeWebhookRoutes = require('./modules/payment/webhook.routes');
 const navlinkRoutes = require('./modules/navlink/navlink.routes');
+const paypalRoutes = require('./modules/payment/paypal.routes');
 
 const app    = express();
 const prisma = new PrismaClient();
@@ -19,7 +20,8 @@ app.use(
   '/webhooks/stripe',
   express.raw({ type: 'application/json' }),
   stripeWebhookRoutes
-);
+); 
+
 
 app.use(cors());
 app.use(express.json());
@@ -31,7 +33,7 @@ app.use('/cart',        cartRoutes);
 app.use('/orders',      orderRoutes);
 app.use('/payments/stripe', stripePaymentRoutes);
 app.use('/nav-links', navlinkRoutes);
-
+app.use('/payments/paypal', paypalRoutes);
 app.get('/health', (_req, res) => {
   res.json({ ok: true, data: { status: 'ok' } });
 });
