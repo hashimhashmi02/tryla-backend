@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Flat shipping fee (you can make it configurable later)
+// Flat shipping fee
 const SHIPPING_FEE = 0;
 
 /**

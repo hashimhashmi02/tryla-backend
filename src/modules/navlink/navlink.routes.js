@@ -7,10 +7,9 @@ const {
   updateNavLinkSchema
 } = require('./navlink.schema');
 
-// Public read
 router.get('/', ctrl.list);
 
-// Admin writes
+
 router.post(
   '/',
   auth('ADMIN'),
