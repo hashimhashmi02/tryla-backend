@@ -9,8 +9,6 @@ const IORedis    = require('ioredis');
 const redis = new IORedis(process.env.REDIS_URL);
 redis.on('error', () => { /* ignore connection failures */ });
 
-// — PUBLIC — cache reads
-
 router.get('/filters', cache, async (req, res, next) => {
   try {
     const data = await controller.getFilters();
@@ -51,8 +49,6 @@ router.get('/:id', cache, async (req, res, next) => {
   }
 });
 
-// — ADMIN — invalidate cache on writes
-
 
 router.post(
   '/',
@@ -76,10 +72,10 @@ router.post(
 router.patch(
   '/:id',
   auth('ADMIN'),
-  validate(updateProductSchema),
+  validate(updateProductSchema),          
   async (req, res, next) => {
     try {
-      const item = await controller.update(req.params.id, req.validated);
+      const item = await controller.update(req.params.id, req.body);
       await Promise.all([
         redis.del('/products'),
         redis.del('/products/filters'),

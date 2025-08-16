@@ -1,6 +1,11 @@
-// src/modules/product/product.service.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
+function badRequest(msg) {
+  const err = new Error(msg);
+  err.status = 400;
+  return err;
+}
 
 exports.getFilters = async () => {
   const sizes        = ['XS','S','M','L','XL','XXL'];
@@ -42,11 +47,8 @@ exports.list = async (query = {}) => {
   });
 };
 
-exports.getOne = async (id) => {
-  return prisma.product.findUnique({
-    where: { id }
-  });
-};
+exports.getOne = (id) =>
+  prisma.product.findUnique({ where: { id } });
 
 exports.create = async (data) => {
   const {
@@ -58,24 +60,25 @@ exports.create = async (data) => {
     careInstructions, fit, length
   } = data;
 
-  // If you're not using Zod earlier, keep this check:
   if (!title || price == null || !categoryId) {
-    const err = new Error('Missing required fields: title, price, categoryId');
-    err.status = 400;
-    throw err;
+    throw badRequest('Missing required fields: title, price, categoryId');
   }
+
+  if (!Array.isArray(images))   throw badRequest('`images` must be an array');
+  if (!Array.isArray(sizes))    throw badRequest('`sizes` must be an array');
+  if (!Array.isArray(features)) throw badRequest('`features` must be an array');
 
   return prisma.product.create({
     data: {
       title,
       description,
       price: parseFloat(price),
-      stock,
-      images,
+      stock: Number(stock) || 0,
+      images,                  // JSON[] column
       categoryId,
-      sizes,
+      sizes,                   // JSON[] column
       availability,
-      features,
+      features,                // JSON[] column
       material,
       careInstructions,
       fit,
@@ -84,28 +87,61 @@ exports.create = async (data) => {
   });
 };
 
-exports.update = async (id, data) => {
-  if (data.price != null) {
-    data.price = parseFloat(data.price);
+exports.update = async (id, body) => {
+  const data = {};
+
+  if ('title' in body)        data.title = body.title;
+  if ('description' in body)  data.description = body.description;
+
+  if ('price' in body) {
+    const p = parseFloat(body.price);
+    if (Number.isNaN(p)) throw badRequest('`price` must be a number');
+    data.price = p;
   }
+
+  if ('stock' in body) {
+    const s = Number.parseInt(body.stock, 10);
+    if (!Number.isFinite(s)) throw badRequest('`stock` must be a number');
+    data.stock = s;
+  }
+
+  if ('categoryId' in body)   data.categoryId = body.categoryId;
+  if ('availability' in body) data.availability = body.availability;
+  if ('material' in body)     data.material = body.material;
+  if ('careInstructions' in body) data.careInstructions = body.careInstructions;
+  if ('fit' in body)          data.fit = body.fit;
+  if ('length' in body)       data.length = body.length;
+
+  // Array fields — replace the list using Prisma { set: [...] }
+  if ('images' in body) {
+    if (!Array.isArray(body.images)) throw badRequest('`images` must be an array of strings');
+    data.images = { set: body.images };
+  }
+  if ('sizes' in body) {
+    if (!Array.isArray(body.sizes)) throw badRequest('`sizes` must be an array of strings');
+    data.sizes = { set: body.sizes };
+  }
+  if ('features' in body) {
+    if (!Array.isArray(body.features)) throw badRequest('`features` must be an array of strings');
+    data.features = { set: body.features };
+  }
+
+  // Nothing valid to update?
+  if (Object.keys(data).length === 0) {
+    throw badRequest('No valid fields to update');
+  }
+
   return prisma.product.update({
     where: { id },
     data
   });
 };
 
-exports.remove = async (id) => {
-  return prisma.product.delete({
-    where: { id }
-  });
-};
+exports.remove = (id) =>
+  prisma.product.delete({ where: { id } });
 
-/**
- * @param {string} q
- * @returns {Promise<Product[]>}
- */
-exports.search = async (q) => {
-  return prisma.product.findMany({
+exports.search = (q) =>
+  prisma.product.findMany({
     where: {
       OR: [
         { title:       { contains: q, mode: 'insensitive' } },
@@ -114,4 +150,3 @@ exports.search = async (q) => {
     },
     orderBy: { createdAt: 'desc' }
   });
-};
