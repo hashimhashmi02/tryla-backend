@@ -13,13 +13,10 @@ module.exports = async function cache(req,res,next){
         console.error('Redis GET error',err);
     }
 
-
- // Monkey‑patched res.json to cache the outgoing response
- 
     const originalJson = res.json.bind(res);
   res.json = (body) => {
     try {
-      redis.setex(key, 60, JSON.stringify(body)); // TTL 60s
+      redis.setex(key, 60, JSON.stringify(body)); 
     } catch (err) {
       console.error('Redis SETEX error', err);
     }
