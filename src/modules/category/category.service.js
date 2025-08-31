@@ -1,9 +1,18 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-exports.create = async({name})=>{
-    if(!name) throw new Error('name required');
-    return prisma.category.create({data:{name}});
+const badRequest = (m) => Object.assign(new Error(m), { status: 400 });
+
+exports.create = ({ name }) => {
+  if (!name) throw badRequest('name is required');
+  return prisma.category.create({ data: { name } });
 };
 
-exports.list = async()=> prisma.category.findMany(); 
+exports.list = () => prisma.category.findMany({ orderBy: { createdAt: 'desc' } });
+
+exports.getOne = (id) => prisma.category.findUnique({ where: { id } });
+
+exports.update = (id, { name }) => {
+  if (!name) throw badRequest('name is required');
+  return prisma.category.update({ where: { id }, data: { name } });
+};

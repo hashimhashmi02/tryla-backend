@@ -1,15 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Flat shipping fee
 const SHIPPING_FEE = 0;
 
-/**
- * @param {string} userId
- * @returns {Promise<{ items: Array, summary: { subtotal:number, shipping:number, total:number } }>}
- */
+const bad = (m) => Object.assign(new Error(m), { status: 400 });
+
 exports.getCart = async (userId) => {
-  
   const rawItems = await prisma.cartItem.findMany({
     where: { userId },
     include: { product: true }
@@ -17,6 +13,7 @@ exports.getCart = async (userId) => {
 
   const items = rawItems.map(ci => ({
     id: ci.id,
+    size: ci.size,                      // <-- include size in response
     quantity: ci.quantity,
     product: {
       id:           ci.product.id,
@@ -24,45 +21,28 @@ exports.getCart = async (userId) => {
       price:        Number(ci.product.price),
       images:       ci.product.images,
       availability: ci.product.availability,
-      categoryId:   ci.product.categoryId
-      
+      categoryId:   ci.product.categoryId,
     }
   }));
 
-
-  const subtotal = items.reduce(
-    (sum, it) => sum + it.product.price * it.quantity,
-    0
-  );
+  const subtotal = items.reduce((s, it) => s + it.product.price * it.quantity, 0);
   const shipping = SHIPPING_FEE;
-  const total    = subtotal + shipping;
+  const total = subtotal + shipping;
 
   return { items, summary: { subtotal, shipping, total } };
 };
 
 /**
- * @param {string} userId
- * @param {string} productId
- * @param {number} quantity
- * @returns {Promise<CartItem>}
+ * Create / merge cart item by (userId, productId, size)
  */
-exports.create = async (userId, productId, quantity = 1) => {
-  if (!productId) {
-    const err = new Error('productId is required');
-    err.status = 400;
-    throw err;
-  }
-  if (quantity < 1) {
-    const err = new Error('Quantity must be at least 1');
-    err.status = 400;
-    throw err;
-  }
+exports.create = async (userId, productId, quantity = 1, size) => {
+  if (!productId) throw bad('productId is required');
+  if (!size) throw bad('size is required');
+  if (quantity < 1) throw bad('quantity must be at least 1');
 
-
-  const existing = await prisma.cartItem.findUnique({
-    where: {
-      userId_productId: { userId, productId }
-    }
+  // merge same product+size
+  const existing = await prisma.cartItem.findFirst({
+    where: { userId, productId, size }
   });
 
   if (existing) {
@@ -73,39 +53,18 @@ exports.create = async (userId, productId, quantity = 1) => {
   }
 
   return prisma.cartItem.create({
-    data: {
-      userId,
-      productId,
-      quantity
-    }
+    data: { userId, productId, quantity, size } // <-- persist size
   });
 };
 
-/**
-
- * @param {string} itemId
- * @param {number} quantity
- * @returns {Promise<CartItem>}
- */
 exports.update = async (itemId, quantity) => {
-  if (quantity < 1) {
-    const err = new Error('Quantity must be at least 1');
-    err.status = 400;
-    throw err;
-  }
+  if (quantity < 1) throw bad('quantity must be at least 1');
   return prisma.cartItem.update({
     where: { id: itemId },
     data: { quantity }
   });
 };
 
-/**
-
- * @param {string} itemId
- * @returns {Promise<void>}
- */
 exports.remove = async (itemId) => {
-  await prisma.cartItem.delete({
-    where: { id: itemId }
-  });
+  await prisma.cartItem.delete({ where: { id: itemId } });
 };

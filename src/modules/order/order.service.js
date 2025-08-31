@@ -2,6 +2,11 @@ const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const badRequest = (msg) => Object.assign(new Error(msg), { status: 400 });
+const isAdmin = (user) => !!user && user.role === 'ADMIN';
+const ALLOWED_STATUS =
+  Prisma?.$Enums?.OrderStatus
+    ? Object.values(Prisma.$Enums.OrderStatus)
+    : ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 exports.createOrder = async (userId, shippingAddress, recipientName, recipientPhone) => {
   const cartItems = await prisma.cartItem.findMany({
@@ -16,8 +21,8 @@ exports.createOrder = async (userId, shippingAddress, recipientName, recipientPh
     total += price * ci.quantity;
     return {
       productId: ci.productId,
-      quantity: ci.quantity,
-      price,
+      quantity:  ci.quantity,
+      price, 
     };
   });
 
@@ -42,10 +47,8 @@ exports.createOrder = async (userId, shippingAddress, recipientName, recipientPh
 
 
 exports.listOrders = async (user) => {
-  const isAdmin = user && user.role === 'ADMIN';
-
   return prisma.order.findMany({
-    where: isAdmin ? {} : { userId: user.id },
+    where: isAdmin(user) ? {} : { userId: user.id },
     include: {
       user: true,
       items: { include: { product: true } },
@@ -56,45 +59,37 @@ exports.listOrders = async (user) => {
 
 
 exports.getOrder = async (user, orderId) => {
-  const isAdmin = user && user.role === 'ADMIN';
+  const where = isAdmin(user)
+    ? { id: orderId }
+    : { id: orderId, userId: user.id };
 
-  if (isAdmin) {
-    return prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        user: true,
-        items: { include: { product: true } },
-      },
-    });
-  }
-
-
-  return prisma.order.findFirst({
-    where: { id: orderId, userId: user.id },
-    include: {
-      user: true,
-      items: { include: { product: true } },
-    },
-  });
+ 
+  return isAdmin(user)
+    ? prisma.order.findUnique({
+        where,
+        include: { user: true, items: { include: { product: true } } },
+      })
+    : prisma.order.findFirst({
+        where,
+        include: { user: true, items: { include: { product: true } } },
+      });
 };
 
-
 exports.updateStatus = async (orderId, status) => {
-  const allowed = Object.values(Prisma.OrderStatus); // e.g. ['PENDING','SHIPPED','COMPLETED','CANCELLED']
-  if (!allowed.includes(status)) {
-    throw badRequest(`Invalid status. Allowed: ${allowed.join(', ')}`);
+  const s = String(status || '').toUpperCase().trim();
+  if (!ALLOWED_STATUS.includes(s)) {
+    throw badRequest(`Invalid status. Allowed: ${ALLOWED_STATUS.join(', ')}`);
   }
 
   return prisma.order.update({
     where: { id: orderId },
-    data: { status },
+    data:  { status: s },
     include: {
       user: true,
       items: { include: { product: true } },
     },
   });
 };
-
 
 exports.listMyOrders = async (userId) => {
   return prisma.order.findMany({

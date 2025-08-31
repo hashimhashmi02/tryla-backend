@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
@@ -8,30 +7,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role{
-  USER
-  ADMIN
-}
-
-model User{
-id       String @id @default(cuid())
-name     String 
-email    String   @unique
-password String
-role     Role @default(USER)
-createdAt DateTime @default(now())
-updaredAt DateTime @updatedAt 
-
-CartItem CartItem[]
-
-Order Order[]
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(USER)
+  createdAt DateTime   @default(now())
+  updaredAt DateTime   @updatedAt
+  CartItem  CartItem[]
+  Order     Order[]
 }
 
 model Category {
-  id    String @id @default(cuid())
-  name  String @unique
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAT DateTime  @default(now())
   products  Product[]
-  createdAT DateTime @default(now())
+}
+
+model Product {
+  id               String       @id @default(cuid())
+  title            String
+  description      String
+  price            Decimal      @db.Decimal(10, 2)
+  stock            Int          @default(0)
+  images           String[]
+  categoryId       String
+  createdAt        DateTime     @default(now())
+  availability     Availability @default(IN_STOCK)
+  careInstructions String?
+  features         String[]
+  fit              String?
+  length           String?
+  material         String?
+  sizes            String[]
+  updatedAt        DateTime     @updatedAt
+  CartItem         CartItem[]
+  OrderItem        OrderItem[]
+  category         Category     @relation(fields: [categoryId], references: [id])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int
+  size      String?   
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // optional later (once all existing rows have size):
+  // @@unique([userId, productId, size], name: "user_product_size")
+}
+
+
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  status          OrderStatus @default(PENDING)
+  total           Decimal     @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  recipientName   String      @default("")
+  recipientPhone  String      @default("")
+  shippingAddress String      @default("")
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model NavLink {
+  id        String   @id @default(cuid())
+  label     String
+  url       String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 enum Availability {
@@ -39,82 +109,10 @@ enum Availability {
   OUT_OF_STOCK
 }
 
-model Product {
-  id               String       @id @default(cuid())
-  title            String
-  description      String
-  price            Decimal      @db.Decimal(10,2)
-  stock            Int          @default(0)
-  images           String[]     // array of image URLs
-  sizes            String[]     // ["S","M","L","XL"]
-  categoryId       String
-  category         Category     @relation(fields: [categoryId], references: [id])
-  availability     Availability @default(IN_STOCK)
-  features         String[]     // e.g. ["Breathable","Quick‑dry"]
-  material         String?      // e.g. "100% Cotton"
-  careInstructions String?      // e.g. "Machine wash cold…"
-  fit              String?      // e.g. "Relaxed fit…"
-  length           String?      // e.g. "Maxi length…"
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-
-  CartItem CartItem[]
-
-  OrderItem OrderItem[]
-}
-  
-
-  enum OrderStatus {
+enum OrderStatus {
   PENDING
-  COMPLETED
+  PAID
+  SHIPPED
+  DELIVERED
   CANCELLED
 }
-
-model CartItem {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int      @default(1)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([userId, productId])  
-}
-
-model Order {
-  id               String       @id @default(cuid())
-  userId           String
-  user             User         @relation(fields: [userId], references: [id])
-  status           OrderStatus  @default(PENDING)
-  total            Decimal      @db.Decimal(10,2)
-  shippingAddress  String       @default("")
-  recipientName    String       @default("")
-  recipientPhone   String       @default("")
-  items            OrderItem[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-}
-
-
-model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id])
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
-  price      Decimal  @db.Decimal(10,2)  // snapshot of product.price at purchase
-}
-
-  model NavLink {
-  id     String @id @default(cuid())
-  label  String
-  url    String
-  order  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
