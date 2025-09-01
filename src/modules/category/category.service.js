@@ -8,7 +8,7 @@ exports.create = ({ name }) => {
   return prisma.category.create({ data: { name } });
 };
 
-exports.list = () => prisma.category.findMany({ orderBy: { createdAt: 'desc' } });
+exports.list = () => prisma.category.findMany({ orderBy: { createdAT: 'desc' } });
 
 exports.getOne = (id) => prisma.category.findUnique({ where: { id } });
 
