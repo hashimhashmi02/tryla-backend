@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 const badRequest = (m) => Object.assign(new Error(m), { status: 400 });
 
 exports.create = ({ name }) => {
-  if (!name) throw badRequest('name is required');
+  if (!name) throw badRequest("name is required");
   return prisma.category.create({ data: { name } });
 };
 
