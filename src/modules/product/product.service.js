@@ -1,38 +1,48 @@
+// src/modules/product/product.service.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-function badRequest(msg) {
-  const err = new Error(msg);
-  err.status = 400;
-  return err;
-}
+const badRequest = (msg) => Object.assign(new Error(msg), { status: 400 });
 
-exports.getFilters = async () => {
+// ---------- FILTERS ----------
+async function getFilters() {
   const sizes        = ['XS','S','M','L','XL','XXL'];
   const availability = ['IN_STOCK','OUT_OF_STOCK'];
-
-  const categories = await prisma.category.findMany({
-    select: { id: true, name: true }
-  });
-
+  const categories   = await prisma.category.findMany({ select: { id: true, name: true } });
   return { sizes, availability, categories };
-};
+}
 
-exports.list = async (query = {}) => {
+// ---------- LIST ----------
+async function list(query = {}) {
   const {
-    categoryId, search,
+    category,          // category name (e.g. "jackets")
+    categoryId,        // category id
+    search,            // text search
+    size,              // one size value e.g. "M"
     minPrice, maxPrice,
     skip = 0, take = 20
   } = query;
 
   const where = {};
+
   if (categoryId) where.categoryId = categoryId;
+
+  if (category) {
+    where.category = { name: { equals: category, mode: 'insensitive' } };
+  }
+
   if (search) {
     where.OR = [
       { title:       { contains: search, mode: 'insensitive' } },
       { description: { contains: search, mode: 'insensitive' } }
     ];
   }
+
+  if (size) {
+    // sizes is a JSON/text array column; adjust operator to your column type
+    where.sizes = { has: size };    // Prisma `has` for JSON[] | string[]
+  }
+
   if (minPrice != null || maxPrice != null) {
     where.price = {};
     if (minPrice != null) where.price.gte = parseFloat(minPrice);
@@ -45,12 +55,14 @@ exports.list = async (query = {}) => {
     take: Number(take),
     orderBy: { createdAt: 'desc' }
   });
-};
+}
 
-exports.getOne = (id) =>
-  prisma.product.findUnique({ where: { id } });
+// ---------- CRUD ----------
+async function getOne(id) {
+  return prisma.product.findUnique({ where: { id } });
+}
 
-exports.create = async (data) => {
+async function create(data) {
   const {
     title, description,
     price, stock = 0,
@@ -74,20 +86,20 @@ exports.create = async (data) => {
       description,
       price: parseFloat(price),
       stock: Number(stock) || 0,
-      images,                  // JSON[] column
+      images,
       categoryId,
-      sizes,                   // JSON[] column
+      sizes,
       availability,
-      features,                // JSON[] column
+      features,
       material,
       careInstructions,
       fit,
       length
     }
   });
-};
+}
 
-exports.update = async (id, body) => {
+async function update(id, body) {
   const data = {};
 
   if ('title' in body)        data.title = body.title;
@@ -112,7 +124,6 @@ exports.update = async (id, body) => {
   if ('fit' in body)          data.fit = body.fit;
   if ('length' in body)       data.length = body.length;
 
-  // Array fields — replace the list using Prisma { set: [...] }
   if ('images' in body) {
     if (!Array.isArray(body.images)) throw badRequest('`images` must be an array of strings');
     data.images = { set: body.images };
@@ -126,22 +137,20 @@ exports.update = async (id, body) => {
     data.features = { set: body.features };
   }
 
-  // Nothing valid to update?
-  if (Object.keys(data).length === 0) {
-    throw badRequest('No valid fields to update');
-  }
+  if (Object.keys(data).length === 0) throw badRequest('No valid fields to update');
 
   return prisma.product.update({
     where: { id },
     data
   });
-};
+}
 
-exports.remove = (id) =>
-  prisma.product.delete({ where: { id } });
+async function remove(id) {
+  return prisma.product.delete({ where: { id } });
+}
 
-exports.search = (q) =>
-  prisma.product.findMany({
+async function search(q) {
+  return prisma.product.findMany({
     where: {
       OR: [
         { title:       { contains: q, mode: 'insensitive' } },
@@ -150,3 +159,15 @@ exports.search = (q) =>
     },
     orderBy: { createdAt: 'desc' }
   });
+}
+
+// ✅ Export explicitly (don’t mix `exports.foo =` and `module.exports = {}` in the same file)
+module.exports = {
+  getFilters,
+  list,
+  getOne,
+  create,
+  update,
+  remove,
+  search,
+};
