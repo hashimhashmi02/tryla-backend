@@ -1,10 +1,9 @@
-// src/modules/product/product.service.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const badRequest = (msg) => Object.assign(new Error(msg), { status: 400 });
 
-// ---------- FILTERS ----------
+
 async function getFilters() {
   const sizes        = ['XS','S','M','L','XL','XXL'];
   const availability = ['IN_STOCK','OUT_OF_STOCK'];
@@ -12,13 +11,13 @@ async function getFilters() {
   return { sizes, availability, categories };
 }
 
-// ---------- LIST ----------
+
 async function list(query = {}) {
   const {
-    category,          // category name (e.g. "jackets")
-    categoryId,        // category id
-    search,            // text search
-    size,              // one size value e.g. "M"
+    category,          
+    categoryId,       
+    search,            
+    size,              
     minPrice, maxPrice,
     skip = 0, take = 20
   } = query;
@@ -39,8 +38,8 @@ async function list(query = {}) {
   }
 
   if (size) {
-    // sizes is a JSON/text array column; adjust operator to your column type
-    where.sizes = { has: size };    // Prisma `has` for JSON[] | string[]
+    
+    where.sizes = { has: size };   
   }
 
   if (minPrice != null || maxPrice != null) {
@@ -57,7 +56,7 @@ async function list(query = {}) {
   });
 }
 
-// ---------- CRUD ----------
+
 async function getOne(id) {
   return prisma.product.findUnique({ where: { id } });
 }
@@ -161,7 +160,7 @@ async function search(q) {
   });
 }
 
-// ✅ Export explicitly (don’t mix `exports.foo =` and `module.exports = {}` in the same file)
+
 module.exports = {
   getFilters,
   list,
