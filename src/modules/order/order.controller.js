@@ -1,6 +1,4 @@
 const service = require('./order.service');
-
-
 exports.checkout = async (req, res, next) => {
   try {
     const { shippingAddress, recipientName, recipientPhone } = req.body;
@@ -22,8 +20,6 @@ exports.checkout = async (req, res, next) => {
     next(err);
   }
 };
-
-
 exports.list = async (req, res, next) => {
   try {
     const orders = await service.listOrders(req.user);
@@ -32,8 +28,6 @@ exports.list = async (req, res, next) => {
     next(err);
   }
 };
-
-
 exports.listMine = async (req, res, next) => {
   try {
     const orders = await service.listMyOrders(req.user.id);
@@ -58,7 +52,7 @@ exports.updateStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     if (!status) {
-      const err = new Error('status is required');
+      const err = new Error('Status is required');
       err.status = 400;
       throw err;
     }
