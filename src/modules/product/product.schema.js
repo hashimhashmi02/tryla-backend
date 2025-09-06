@@ -6,8 +6,6 @@ const strArr = z.array(z.string());
 exports.createProductSchema = z.object({
   title:        z.string().min(1, 'title is required'),
   description:  z.string().optional().default(''),
-
- 
   price: z.coerce.number({ invalid_type_error: 'price must be a number' })
           .positive('price must be > 0'),
 
@@ -15,10 +13,7 @@ exports.createProductSchema = z.object({
 
   images:       strArr.optional().default([]),
   sizes:        strArr.optional().default([]),
-
-
   categoryId:   z.string().min(1, 'categoryId is required'),
-
   availability: AvailabilityEnum.optional().default('IN_STOCK'),
   features:     strArr.optional().default([]),
 

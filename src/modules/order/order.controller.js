@@ -46,8 +46,6 @@ exports.getOne = async (req, res, next) => {
     next(err);
   }
 };
-
-
 exports.updateStatus = async (req, res, next) => {
   try {
     const { status } = req.body;

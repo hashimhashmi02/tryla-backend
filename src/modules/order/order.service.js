@@ -57,7 +57,6 @@ exports.listOrders = async (user) => {
   });
 };
 
-
 exports.getOrder = async (user, orderId) => {
   const where = isAdmin(user)
     ? { id: orderId }
